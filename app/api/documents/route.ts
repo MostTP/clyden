@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { activityDetails, readSessionFromRequest } from '@/lib/auth'
+import { buildErrorPayload } from '@/lib/api'
 import { addActivity, readStore, updateStore } from '@/lib/server/store'
 
 export const dynamic = 'force-dynamic'
@@ -9,6 +11,8 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const session = await readSessionFromRequest(request)
+  if (!session || session.role !== 'seller') return NextResponse.json(buildErrorPayload('Seller authentication required.', 403, 'ROLE_REQUIRED'), { status: 403 })
   const body = await request.json().catch(() => null)
   const id = typeof body?.id === 'string' ? body.id : ''
   if (!id) return NextResponse.json({ error: 'id is required.' }, { status: 400 })
@@ -21,7 +25,7 @@ export async function PATCH(request: Request) {
     document.status = document.complete ? 'uploaded' : 'needed'
     document.updatedAt = new Date().toISOString()
     documentFound = true
-    addActivity(store, `${document.label} marked ${document.complete ? 'complete' : 'incomplete'}`)
+    addActivity(store, `${document.label} marked ${document.complete ? 'complete' : 'incomplete'}`, { actorId: session.userId, actorRole: session.role, action: 'document_updated', entityType: 'document', entityId: document.id })
   })
 
   if (!documentFound) return NextResponse.json({ error: 'Document not found.' }, { status: 404 })

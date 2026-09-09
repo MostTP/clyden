@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, Check, MapPin, Search, ShieldCheck, ShoppingCart, SlidersHorizontal, X } from 'lucide-react'
 import { SimpleHeader } from '../landing'
@@ -32,6 +33,26 @@ function formatNaira(value: number) {
 }
 
 export default function BuyerPage() {
+  const router = useRouter()
+  useEffect(() => {
+    let active = true
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({ data: null }))
+        if (!active) return
+        if (!payload.data || payload.data.role !== 'buyer') {
+          if (payload.data?.role === 'seller') router.replace('/seller')
+          else if (payload.data?.role === 'admin') router.replace('/admin')
+          else router.replace('/login?role=buyer&next=/buyer')
+        }
+      })
+      .catch(() => {
+        if (active) router.replace('/login?role=buyer&next=/buyer')
+      })
+
+    return () => { active = false }
+  }, [router])
+
   const [lots, setLots] = useState<Lot[]>([])
   const [buyerId, setBuyerId] = useState('')
   const [search, setSearch] = useState('')
@@ -45,14 +66,15 @@ export default function BuyerPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const storedBuyerId = window.localStorage.getItem('clyden_buyer_id') ?? `buyer_${crypto.randomUUID()}`
-    window.localStorage.setItem('clyden_buyer_id', storedBuyerId)
-    setBuyerId(storedBuyerId)
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((payload) => setBuyerId(payload.data?.userId ?? ''))
+      .catch(() => setBuyerId(''))
   }, [])
 
   useEffect(() => {
     if (!buyerId) return
-    Promise.all([fetch('/api/lots?status=available'), fetch(`/api/shortlists?buyerId=${encodeURIComponent(buyerId)}`)])
+    Promise.all([fetch('/api/lots?status=available'), fetch('/api/shortlists')])
       .then(async ([lotsResponse, shortlistResponse]) => {
         if (!lotsResponse.ok || !shortlistResponse.ok) throw new Error('Unable to load the procurement workspace.')
         const lotsPayload = await lotsResponse.json()
@@ -74,7 +96,7 @@ export default function BuyerPage() {
 
   async function shortlistLot(lot: Lot) {
     setError('')
-    const response = await fetch('/api/shortlists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyerId, lotId: lot.id }) })
+    const response = await fetch('/api/shortlists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lotId: lot.id }) })
     const payload = await response.json()
     if (!response.ok) { setError(payload.error ?? 'Unable to shortlist this lot.'); return }
     setShortlisted((current) => new Set(current).add(lot.id))

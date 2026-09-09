@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { Activity, Check, CheckCircle2, Leaf, ShieldAlert, Truck, Users, X } from 'lucide-react'
 import { SimpleHeader } from '../landing'
@@ -8,7 +9,7 @@ type ReviewItem = {
   id: string
   type: 'buyer_verification' | 'quality_record' | 'delivery_exception'
   label: string
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'approved' | 'rejected' | 'escalated'
   createdAt: string
 }
 
@@ -27,6 +28,26 @@ const reviewLabels: Record<ReviewItem['type'], string> = {
 }
 
 export default function AdminPage() {
+  const router = useRouter()
+  useEffect(() => {
+    let active = true
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({ data: null }))
+        if (!active) return
+        if (!payload.data || payload.data.role !== 'admin') {
+          if (payload.data?.role === 'seller') router.replace('/seller')
+          else if (payload.data?.role === 'buyer') router.replace('/buyer')
+          else router.replace('/login?role=admin&next=/admin')
+        }
+      })
+      .catch(() => {
+        if (active) router.replace('/login?role=admin&next=/admin')
+      })
+
+    return () => { active = false }
+  }, [router])
+
   const [data, setData] = useState<AdminData>(emptyData)
   const [loading, setLoading] = useState(true)
   const [workingId, setWorkingId] = useState('')
@@ -48,7 +69,7 @@ export default function AdminPage() {
 
   useEffect(() => { void loadAdmin() }, [loadAdmin])
 
-  async function decideReview(id: string, status: 'approved' | 'rejected') {
+  async function decideReview(id: string, status: 'approved' | 'rejected' | 'escalated') {
     setWorkingId(id)
     try {
       const response = await fetch('/api/admin', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) })

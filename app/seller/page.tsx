@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Activity,
@@ -58,6 +59,26 @@ function quantityFromInput(value: string) {
 }
 
 export default function SellerPage() {
+  const router = useRouter()
+  useEffect(() => {
+    let active = true
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({ data: null }))
+        if (!active) return
+        if (!payload.data || payload.data.role !== 'seller') {
+          if (payload.data?.role === 'buyer') router.replace('/buyer')
+          else if (payload.data?.role === 'admin') router.replace('/admin')
+          else router.replace('/login?role=seller&next=/seller')
+        }
+      })
+      .catch(() => {
+        if (active) router.replace('/login?role=seller&next=/seller')
+      })
+
+    return () => { active = false }
+  }, [router])
+
   const [active, setActive] = useState<View>('Overview')
   const [crop, setCrop] = useState<Crop>('Sesame')
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null)

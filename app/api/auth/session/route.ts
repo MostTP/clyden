@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { readSessionToken, sessionCookieName } from '@/lib/auth'
+import { readSessionFromRequest } from '@/lib/auth'
+import { buildErrorPayload } from '@/lib/api'
 
 export async function GET(request: Request) {
-  const cookieHeader = request.headers.get('cookie') ?? ''
-  const token = cookieHeader.split(';').map((item) => item.trim()).find((item) => item.startsWith(`${sessionCookieName}=`))?.slice(sessionCookieName.length + 1)
-  const session = await readSessionToken(token)
-  return session ? NextResponse.json({ data: session }) : NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
+  const session = await readSessionFromRequest(request)
+  return session ? NextResponse.json({ data: session }) : NextResponse.json(buildErrorPayload('Authentication required.', 401, 'AUTH_REQUIRED'), { status: 401 })
 }
