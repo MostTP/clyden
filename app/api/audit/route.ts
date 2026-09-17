@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   const session = await readSessionFromRequest(request)
-  if (!session || session.role !== 'admin') return NextResponse.json(buildErrorPayload('Authentication required.', 401, 'AUTH_REQUIRED'), { status: 401 })
+  if (!session) return NextResponse.json(buildErrorPayload('Authentication required.', 401, 'AUTH_REQUIRED'), { status: 401 })
+  if (session.role !== 'admin') return NextResponse.json(buildErrorPayload('Admin authentication required.', 403, 'ROLE_REQUIRED'), { status: 403 })
 
   const params = new URL(request.url).searchParams
   const entityType = params.get('entityType')
