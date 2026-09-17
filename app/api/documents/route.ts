@@ -17,7 +17,7 @@ export async function PATCH(request: Request) {
   if (!session || session.role !== 'seller') return NextResponse.json(buildErrorPayload('Seller authentication required.', 403, 'ROLE_REQUIRED'), { status: 403 })
   const body = await request.json().catch(() => null)
   const id = typeof body?.id === 'string' ? body.id : ''
-  if (!id) return NextResponse.json({ error: 'id is required.' }, { status: 400 })
+  if (!id) return NextResponse.json(buildErrorPayload('id is required.', 400, 'INVALID_DOCUMENT_ID'), { status: 400 })
 
   let documentFound = false
   updateStore((store) => {
@@ -30,6 +30,6 @@ export async function PATCH(request: Request) {
     addActivity(store, `${document.label} marked ${document.complete ? 'complete' : 'incomplete'}`, { actorId: session.userId, actorRole: session.role, action: 'document_updated', entityType: 'document', entityId: document.id })
   })
 
-  if (!documentFound) return NextResponse.json({ error: 'Document not found.' }, { status: 404 })
+  if (!documentFound) return NextResponse.json(buildErrorPayload('Document not found.', 404, 'DOCUMENT_NOT_FOUND'), { status: 404 })
   return NextResponse.json({ data: readStore().documents.find((item) => item.id === id) })
 }

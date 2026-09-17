@@ -5,7 +5,9 @@ import { addActivity, readStore, updateStore, type LotStatus } from '@/lib/serve
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(_request: Request, context: { params: Promise<Record<string, string>> }) {
+export async function GET(request: Request, context: { params: Promise<Record<string, string>> }) {
+  const session = await readSessionFromRequest(request)
+  if (!session) return NextResponse.json(buildErrorPayload('Authentication required.', 401, 'AUTH_REQUIRED'), { status: 401 })
   const id = (await context.params).id
   const lot = readStore().lots.find((item) => item.id === id)
   return lot ? NextResponse.json({ data: lot }) : NextResponse.json(buildErrorPayload('Lot not found.', 404, 'LOT_NOT_FOUND'), { status: 404 })
