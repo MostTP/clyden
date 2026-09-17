@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   const session = await readSessionFromRequest(request)
-  const requests = readStore().requests.filter((item) => session?.role === 'seller' || item.buyerId === session?.userId)
+  if (!session) return NextResponse.json(buildErrorPayload('Authentication required.', 401, 'AUTH_REQUIRED'), { status: 401 })
+  const requests = readStore().requests.filter((item) => session.role === 'seller' || item.buyerId === session.userId)
   return NextResponse.json({ data: requests, meta: { total: requests.length } })
 }
 
