@@ -5,7 +5,9 @@ import { addActivity, readStore, updateStore } from '@/lib/server/store'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const session = await readSessionFromRequest(request)
+  if (!session || session.role !== 'admin') return NextResponse.json(buildErrorPayload('Admin authentication required.', 403, 'ROLE_REQUIRED'), { status: 403 })
   const store = readStore()
   return NextResponse.json({
     data: {

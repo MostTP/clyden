@@ -1,4 +1,11 @@
 export type Crop = 'Sesame' | 'Soybean'
+export type UserRole = 'seller' | 'buyer' | 'admin'
+export type LotStatus = 'available' | 'reserved' | 'sold'
+export type RequestStatus = 'open' | 'matched' | 'closed'
+export type DocumentType = 'identity' | 'quality' | 'lab' | 'export'
+export type DocumentStatus = 'needed' | 'uploaded' | 'approved'
+export type ReviewType = 'buyer_verification' | 'quality_record' | 'delivery_exception'
+export type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'escalated'
 
 export type MarketSignal = {
   crop: Crop
