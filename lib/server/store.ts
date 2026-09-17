@@ -2,9 +2,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { DatabaseSync } from 'node:sqlite'
-import { demoSnapshot, type BuyerMatch, type Crop, type DashboardSnapshot, type LogisticsQuote, type ReadinessItem } from '@/lib/agrobridge'
+import { demoSnapshot, type BuyerMatch, type Crop, type DashboardSnapshot, type DocumentStatus, type DocumentType, type LogisticsQuote, type ReadinessItem, type RequestStatus, type ReviewStatus, type ReviewType, type UserRole, type LotStatus } from '@/lib/agrobridge'
 
-export type LotStatus = 'available' | 'reserved' | 'sold'
+export type { LotStatus } from '@/lib/agrobridge'
 
 export type Lot = {
   id: string
@@ -29,7 +29,7 @@ export type BuyerRequest = {
   crop: Crop
   quantityTonnes: number
   targetPricePerTonne: number
-  status: 'open' | 'matched' | 'closed'
+  status: RequestStatus
   createdAt: string
 }
 
@@ -42,7 +42,7 @@ export type Shortlist = {
 
 export type UserAccount = {
   id: string
-  role: 'seller' | 'buyer' | 'admin'
+  role: UserRole
   email: string
   displayName: string
   active: boolean
@@ -52,16 +52,16 @@ export type UserAccount = {
 
 export type DocumentRecord = ReadinessItem & {
   lotId: string
-  type: 'identity' | 'quality' | 'lab' | 'export'
-  status: 'needed' | 'uploaded' | 'approved'
+  type: DocumentType
+  status: DocumentStatus
   updatedAt: string
 }
 
 export type ReviewItem = {
   id: string
-  type: 'buyer_verification' | 'quality_record' | 'delivery_exception'
+  type: ReviewType
   label: string
-  status: 'pending' | 'approved' | 'rejected' | 'escalated'
+  status: ReviewStatus
   createdAt: string
   reviewedBy?: string
   reviewedAt?: string
